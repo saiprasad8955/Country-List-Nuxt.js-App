@@ -1,0 +1,23 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxtjs/axios": "^5.13.6",
+    "luxon": "^3.5.0",
+    "nuxt": "^3.13.0",
+    "sass": "^1.79.3",
+    "vue": "latest",
+    "vue-router": "latest"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.12"
+  }
+}
