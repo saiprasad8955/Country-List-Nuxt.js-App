@@ -1,3 +1,58 @@
+<script setup>
+// Access the current route
+const route = useRoute();
+const country = ref(null); // Reactive country property
+const loading = ref(true); // Loading state
+const neighbourCountries = ref([]); // Neighbour countries
+
+// Fetch the country data based on route param
+const fetchCountry = async () => {
+  loading.value = true; // Set loading to true before fetching
+  try {
+    const countryJson = await $fetch(
+      `https://restcountries.com/v3.1/name/${route.params.name}`
+    );
+
+    const borders = countryJson[0]?.borders;
+    country.value = countryJson[0]; // Set the country to the first object in the array
+
+    if (borders) {
+      const borderPromises = borders.map(async (border) => {
+        const borderData = await $fetch(
+          `https://restcountries.com/v3.1/alpha/${border}`
+        );
+
+        return borderData[0].flags.png;
+      });
+
+      neighbourCountries.value = await Promise.all(borderPromises);
+    }
+  } catch (error) {
+    console.error("Error fetching country details:", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Call the function to fetch country data on mount
+fetchCountry();
+
+// Dynamically update the page title based on the country name
+watchEffect(() => {
+  if (route.params.name) {
+    useHead({
+      title: `Country: ${route.params.name}`,
+      meta: [
+        {
+          name: "description",
+          content: "Country details page",
+        },
+      ],
+    });
+  }
+});
+</script>
+
 <template>
   <div class="flex justify-center w-[100%]">
     <div v-if="loading" class="text-center py-8">
@@ -98,73 +153,3 @@
     </div>
   </div>
 </template>
-<script>
-import { ref } from "vue";
-import { useRoute } from "vue-router";
-
-export default {
-  setup() {
-    const country = ref(null); // Reactive country property
-    const loading = ref(true); // Loading state
-    const neighbourCountries = ref([]); // Neighbour countries
-    const route = useRoute();
-
-    const fetchCountry = async () => {
-      loading.value = true; // Set loading to true before fetching
-      try {
-        const response = await fetch(
-          `https://restcountries.com/v3.1/name/${route.params.name}`
-        );
-
-        const countryJson = await response.json();
-        const borders = countryJson[0].borders;
-        country.value = countryJson[0]; // Set the country to the first object in the array
-
-        if (borders) {
-          const borderPromises = borders.map(async (border) => {
-            const borderResponse = await fetch(
-              `https://restcountries.com/v3.1/alpha/${border}`
-            );
-
-            if (!borderResponse.ok) {
-              throw new Error(
-                `Failed to fetch border country data: ${borderResponse.status}`
-              );
-            }
-
-            // Clone the response to avoid consuming the stream
-            const clonedResponse = borderResponse.clone();
-            const borderData = await clonedResponse.json();
-
-            return borderData[0].flags.png;
-          });
-
-          neighbourCountries.value = await Promise.all(borderPromises);
-        }
-      } catch (error) {
-        console.error("Error fetching country details:", error);
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    fetchCountry();
-
-    // Update the page title dynamically based on the country name
-    watchEffect(() => {
-      if (route.params.name) {
-        useHead({
-          title: `Country : ${route.params.name}`,
-          description: "Country details page",
-        });
-      }
-    });
-
-    return {
-      country,
-      neighbourCountries,
-      loading,
-    };
-  },
-};
-</script>
